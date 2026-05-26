@@ -9,7 +9,7 @@ databases:
     dbUser: toolkituser           # customize e.g. toolkituser02
     defaultDb: postgres
     host: "postgres-postgresql"
-    port: 5433
+    port: 5432
     su:
       user: postgres
       secret:
