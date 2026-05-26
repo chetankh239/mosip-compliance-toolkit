@@ -4,12 +4,17 @@
 databases:
   mosip_toolkit:
     enabled: true
-    host: "postgres-postgresql.postgres"
-    port: 5432
+    scriptsDir: mosip_toolkit      # fixed - must match db_scripts/ folder in repo
+    dbName: mosip_toolkit          # customize e.g. mosip_toolkit02
+    dbUser: toolkituser           # customize e.g. toolkituser02
+    defaultDb: postgres
+    host: "postgres-postgresql"
+    port: 5433
     su:
       user: postgres
       secret:
         name: postgres-postgresql
         key: postgres-password
     dml: 0
+    repoUrl: https://github.com/mosip/mosip-compliance-toolkit.git
     branch: develop

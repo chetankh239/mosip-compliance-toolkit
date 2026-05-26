@@ -1,4 +1,4 @@
-\c mosip_toolkit
+\c :mosipdbname
 
 \ir ddl/testcase.sql
 \ir ddl/sdk_projects.sql

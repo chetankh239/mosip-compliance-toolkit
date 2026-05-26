@@ -1,2 +1,2 @@
-DROP DATABASE IF EXISTS mosip_toolkit;
+DROP DATABASE IF EXISTS :mosipdbname;
 

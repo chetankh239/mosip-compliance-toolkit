@@ -1,1 +1,1 @@
-drop role if exists toolkituser; 
+drop role if exists :dbuname;
