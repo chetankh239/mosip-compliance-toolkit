@@ -1,17 +1,17 @@
-\c mosip_toolkit 
+\c :mosipdbname
 
 GRANT CONNECT
-   ON DATABASE mosip_toolkit
-   TO toolkituser;
+   ON DATABASE :mosipdbname
+   TO :dbuname;
 
 GRANT USAGE
    ON SCHEMA toolkit
-   TO toolkituser;
+   TO :dbuname;
 
 GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES
    ON ALL TABLES IN SCHEMA toolkit
-   TO toolkituser;
+   TO :dbuname;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA toolkit 
-	GRANT SELECT,INSERT,UPDATE,DELETE,REFERENCES ON TABLES TO toolkituser;
+	GRANT SELECT,INSERT,UPDATE,DELETE,REFERENCES ON TABLES TO :dbuname;
 

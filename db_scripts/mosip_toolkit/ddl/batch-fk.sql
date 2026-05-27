@@ -32,4 +32,4 @@ CREATE SEQUENCE toolkit.batch_job_seq;
 -- grants to access all sequences
 GRANT usage, SELECT ON ALL SEQUENCES 
    IN SCHEMA toolkit
-   TO toolkituser;
+   TO :dbuname;
