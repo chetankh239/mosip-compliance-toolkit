@@ -1752,7 +1752,7 @@ public class ISOStandardsValidator extends SBIValidator {
 			if (!FaceISOStandardsValidator.getInstance().isValidImageCompressionType(purpose, compressionType,
 					decoderRequestDto)) {
 				message.append(
-						"<BR>Invalid Image Compression Type for Finger Modality, expected values[Purpose(Auth), ({JPEG_2000_LOSSY(0x01)}), Purpose(Registration), ({JPEG_2000_LOSS_LESS(0x02)})], but received input value[Purpose("
+						"<BR>Invalid Image Compression Type for Face Modality, expected values[Purpose(Auth), ({JPEG_2000_LOSSY(0x01)}), Purpose(Registration), ({JPEG_2000_LOSS_LESS(0x02)})], but received input value[Purpose("
 								+ purpose + "), (" + String.format("0x%02X", compressionType) + ")]");
 				code.append(AppConstants.COMMA_SEPARATOR);
 				code.append("ISO_VALIDATOR_108");
