@@ -1752,7 +1752,7 @@ public class ISOStandardsValidator extends SBIValidator {
 			if (!FaceISOStandardsValidator.getInstance().isValidImageCompressionType(purpose, compressionType,
 					decoderRequestDto)) {
 				message.append(
-						"<BR>Invalid Image Compression Type for Finger Modality, expected values[Purpose(Auth), ({JPEG_2000_LOSSY(0x01)}), Purpose(Registration), ({JPEG_2000_LOSS_LESS(0x02)})], but received input value[Purpose("
+						"<BR>Invalid Image Compression Type for Face Modality, expected values[Purpose(Auth), ({JPEG_2000_LOSSY(0x01)}), Purpose(Registration), ({JPEG_2000_LOSS_LESS(0x02)})], but received input value[Purpose("
 								+ purpose + "), (" + String.format("0x%02X", compressionType) + ")]");
 				code.append(AppConstants.COMMA_SEPARATOR);
 				code.append("ISO_VALIDATOR_108");
@@ -1867,10 +1867,17 @@ public class ISOStandardsValidator extends SBIValidator {
 				isValidWarnings = true;
 			}
 			if (!FaceISOStandardsValidator.getInstance().isValidImageColorSpace(purpose, Modality.Face, decoderRequestDto)) {
-				warningMessage.append(
-						"<BR>Invalid Image Color Space allowed values Up to RGB[24 bit]");
-				warningMsgCode.append("ISO_WARNING_012");
-				isValidWarnings = true;
+				message.append(
+						"<BR>Invalid Image Color Space for Face Modality, expected RGB[24 bit], but received colorSpace["
+								+ decoderRequestDto.getImageColorSpace() + "], depth[" + decoderRequestDto.getDepth()
+								+ "]");
+				code.append(AppConstants.COMMA_SEPARATOR);
+				code.append("ISO_VALIDATOR_118");
+				code.append(AppConstants.ARGUMENTS_DELIMITER);
+				code.append(decoderRequestDto.getImageColorSpace());
+				code.append(AppConstants.ARGUMENTS_SEPARATOR);
+				code.append(decoderRequestDto.getDepth());
+				isValid = false;
 			}
 			if (!FaceISOStandardsValidator.getInstance().isValidImageDPI(purpose, Modality.Face, decoderRequestDto)) {
 				warningMessage.append(
