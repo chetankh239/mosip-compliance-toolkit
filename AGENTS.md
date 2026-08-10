@@ -5,7 +5,7 @@
 This repository contains the source code for **MOSIP Compliance Toolkit** (CTK), a Spring Boot REST API microservice used to test MOSIP-compatible biometric components before they are certified as compliant partners. It supports three project types:
 
 - **SDK** — Biometric algorithm SDKs (quality check, match, extract, segment operations)
-- **SBI** — Sensor Biometric Interface devices (physical capture hardware)
+- **SBI** — [Secure Biometric Interface](https://docs.mosip.io/develop/biometrics/secure-biometric-interface) devices — MOSIP's protocol for biometric capture hardware (fingerprint, iris, face) to expose capabilities and perform trusted capture for registration/authentication client apps
 - **ABIS** — Automated Biometric Identification Systems
 
 The general workflow exposed by the API is: create a project → create a collection of test cases → upload biometric test data → run tests → generate a report → submit for admin review → get approved/rejected.
