@@ -14,6 +14,28 @@ A reference front-end UI lives in a separate repository: [mosip-compliance-toolk
 
 For a broader overview of the product, see the [MOSIP compliance toolkit docs](https://docs.mosip.io/compliance-tool-kit).
 
+## Guide index
+
+| Area | Path | Guide |
+|------|------|-------|
+| **Java / Maven** (Spring Boot service) | `mosip-compliance-toolkit/` | [`mosip-compliance-toolkit/CLAUDE.md`](mosip-compliance-toolkit/CLAUDE.md) — own file, not duplicated here |
+| Fresh DB install (DDL) | `db_scripts/` | [`db_scripts/AGENTS.md`](db_scripts/AGENTS.md) |
+| Version upgrade/rollback SQL | `db_upgrade_scripts/` | [`db_upgrade_scripts/AGENTS.md`](db_upgrade_scripts/AGENTS.md) |
+| K8s Helm chart + cluster install scripts | `helm/` | [`helm/AGENTS.md`](helm/AGENTS.md) |
+| Test/schema assets (no build) | `resources/` | none — reference assets only, see [`resources/ReadMe.md`](resources/ReadMe.md) |
+
+## Repository layout (repo root)
+
+```text
+mosip-compliance-toolkit/          # git repo root (this AGENTS.md)
+├── mosip-compliance-toolkit/      # Spring Boot Maven module → mosip-compliance-toolkit/CLAUDE.md
+├── db_scripts/                    # Greenfield DB create → db_scripts/AGENTS.md
+├── db_upgrade_scripts/            # Incremental upgrades → db_upgrade_scripts/AGENTS.md
+├── helm/                          # Kubernetes Helm chart + install scripts → helm/AGENTS.md
+├── resources/                     # JSON schemas / test data assets (no build)
+└── .github/workflows/             # CI: push-trigger.yml, db-test.yml, chart-lint-publish.yml, verify-keycloak-init.yml
+```
+
 ## Technology Stack
 
 - **Language / Runtime:** Java 11, built with Maven
@@ -77,9 +99,9 @@ A detailed API and architecture reference already exists at [`mosip-compliance-t
 ## Project Structure Notes
 
 - `mosip-compliance-toolkit/` — the actual Spring Boot Maven module (source, tests, Dockerfile, pom.xml). This is the directory CI builds (`SERVICE_LOCATION: ./mosip-compliance-toolkit`).
-- `db_scripts/` — PostgreSQL DDL/DML scripts and install tooling for the `mosip_toolkit` database.
-- `db_upgrade_scripts/` — versioned upgrade scripts for existing deployments.
-- `helm/` — Helm chart and install/restart/delete scripts for deploying to a MOSIP Kubernetes cluster.
+- `db_scripts/` — PostgreSQL DDL/DML scripts and install tooling for the `mosip_toolkit` database. See [`db_scripts/AGENTS.md`](db_scripts/AGENTS.md).
+- `db_upgrade_scripts/` — versioned upgrade/rollback scripts for existing deployments. See [`db_upgrade_scripts/AGENTS.md`](db_upgrade_scripts/AGENTS.md).
+- `helm/` — Helm chart and install/restart/delete scripts for deploying to a MOSIP Kubernetes cluster. See [`helm/AGENTS.md`](helm/AGENTS.md).
 - `resources/` — supporting static resources checked into the repo (schemas/templates used at build or runtime).
 - Within `mosip-compliance-toolkit/src/main/java/io/mosip/compliance/toolkit/`, the layering is `controllers/ → service/ → repository/ → entity/`, with `validators/` (JSON schema validation), `util/` (helpers), and `dto/` (request/response objects) alongside. See `mosip-compliance-toolkit/CLAUDE.md` for the full breakdown.
 
