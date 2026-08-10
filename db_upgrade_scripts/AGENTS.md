@@ -10,7 +10,7 @@
 
 Use this folder to move an **already-deployed** `mosip_toolkit` database between released versions, in either direction (upgrade or rollback). Do not use it to create a database from scratch — that is what [`db_scripts/`](../db_scripts/AGENTS.md) is for.
 
-CI validates this folder via [`.github/workflows/db-test.yml`](../.github/workflows/db-test.yml) (reusable `mosip/kattu` PostgreSQL test workflow), triggered on pushes/PRs that touch `db_scripts/**` — keep both folders consistent for a given schema change.
+[`.github/workflows/db-test.yml`](../.github/workflows/db-test.yml) (reusable `mosip/kattu` PostgreSQL test workflow) validates the fresh-install SQL under `db_scripts/mosip_toolkit` only — it triggers on `db_scripts/**` paths and does not execute anything in this folder. Validate upgrade/rollback SQL manually against a copy of the target schema version, and keep both folders consistent for a given schema change.
 
 ---
 

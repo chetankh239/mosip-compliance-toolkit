@@ -92,7 +92,7 @@ A detailed API and architecture reference already exists at [`mosip-compliance-t
 
 - Runtime configuration (`application.properties`) is loaded from a **Spring Cloud Config Server** at startup, pointed to by `mosip-compliance-toolkit/src/main/resources/bootstrap.properties` (`spring.cloud.config.uri`, `spring.cloud.config.label`, `spring.cloud.config.name=compliance-toolkit`).
 - Any property in `application.properties` can be overridden centrally via `compliance-toolkit-default.properties` in the [mosip-config](https://github.com/mosip/mosip-config) repository — do not hardcode environment-specific values in this repo's `application.properties`.
-- Database setup uses scripts under `db_scripts/` (see [`db_scripts/README.MD`](db_scripts/README.MD)). `db_scripts/init_values.yaml` contains a `dbUserPasswords.dbuserPassword` placeholder that must be filled in locally from the cluster's Postgres secret and **never committed with a real value**.
+- Database setup uses scripts under `db_scripts/` (see [`db_scripts/AGENTS.md`](db_scripts/AGENTS.md)). `db_scripts/init_db.sh` reads the DB user password from the `postgres` namespace's `db-common-secrets` cluster secret and passes it via Helm `--set` at install time — `db_scripts/init_values.yaml`'s `dbUserPasswords.dbuserPassword` field is commented out and must stay that way, never uncommented with a real value.
 - Helm-based deployment lives under `helm/compliance-toolkit/`, with `keycloak-init.sh`, `install.sh`, `restart.sh`, and `delete.sh` scripts.
 - Never commit real credentials, tokens, or secrets into `compliance-toolkit-default.properties`, `db_scripts/init_values.yaml`, or any helm `values.yaml` override — these are meant to be filled in per-environment outside of version control.
 
@@ -116,7 +116,7 @@ A detailed API and architecture reference already exists at [`mosip-compliance-t
 
 - Target the `develop` branch unless the change is specifically a backport/fix for a release branch.
 - Keep changes scoped to the module they touch (`mosip-compliance-toolkit/`, `db_scripts/`, `db_upgrade_scripts/`, or `helm/`) — cross-cutting changes should call out why in the PR description.
-- If a change affects the database schema, add both the DDL/DML under `db_scripts/mosip_toolkit/` and a corresponding upgrade script under `db_upgrade_scripts/`.
+- If a schema change must reach an already-deployed environment, add the DDL/DML under `db_scripts/mosip_toolkit/` and a matching upgrade/rollback pair under `db_upgrade_scripts/`. Fresh-install-only changes need only the `db_scripts/` update.
 - If a change affects API request/response contracts, check whether the reference UI ([mosip-compliance-toolkit-ui](https://github.com/mosip/mosip-compliance-toolkit-ui)) needs a corresponding update, and note that in the PR description.
 - Sign off commits (`git commit -s`) per MOSIP contribution conventions.
 

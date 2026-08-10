@@ -75,8 +75,8 @@ cd helm/compliance-toolkit
 
 ### Do not
 
-1. Hardcode environment-specific hosts/secrets into chart templates — pass them via `values.yaml` or `--set`/ConfigMap, as `install.sh` and `keycloak-init.sh` already do.
-2. Commit real reCAPTCHA keys or Keycloak client secrets — `keycloak-init.sh` prompts for them interactively and stores them as Kubernetes Secrets, not in this repo.
+1. Hardcode environment-specific hosts into chart templates — pass non-sensitive values via `values.yaml`, `--set`, or ConfigMap, as `install.sh` does.
+2. Store reCAPTCHA keys or Keycloak client secrets in `values.yaml`, `--set`, or a ConfigMap — they must live only in Kubernetes Secrets. `keycloak-init.sh` prompts for them interactively and stores them as Kubernetes Secrets, not in this repo; never commit a real value for either.
 3. Hand-edit a `Chart.lock` file if one is generated for the `common` chart dependency — it is a generated lockfile.
 4. Assume `compliance-toolkit-batch-job` lives in this `helm/` folder — it's a separate chart published to the `mosip` Helm repo that `install.sh` also installs.
 

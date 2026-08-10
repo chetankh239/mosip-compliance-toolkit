@@ -56,11 +56,16 @@ Cluster install (existing MOSIP K8s cluster with Postgres already running):
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo add mosip https://mosip.github.io/mosip-helm
 cd db_scripts
-# update init_values.yaml: dbUserPasswords.dbuserPassword from the postgres namespace's db-common-secrets
 ./init_db.sh [kubeconfig]
 ```
 
-`init_db.sh` prompts for confirmation, then installs/reinstalls the `postgres-init-toolkit` Helm release in the `compliance-toolkit` namespace, overwriting any existing `mosip_toolkit` DB — back it up first if it holds real data.
+`init_db.sh` prompts for confirmation, then reads the app DB user's password from the `postgres`
+namespace's `db-common-secrets` cluster secret and passes it to the chart via `--set
+dbUserPasswords.dbuserPassword="$DB_USER_PASSWORD"` — it does **not** read the password from
+`init_values.yaml` (that field is commented out there and unused; leave it that way, do not
+uncomment and fill it in). It then installs/reinstalls the `postgres-init-toolkit` Helm release in
+the `compliance-toolkit` namespace, overwriting any existing `mosip_toolkit` DB — back it up first
+if it holds real data.
 
 ---
 
@@ -79,7 +84,7 @@ cd db_scripts
 1. Keep new tables under `mosip_toolkit/ddl/` **and** wire them into `mosip_toolkit/ddl.sql` — a file that exists but isn't `\ir`-included is never applied.
 2. Set `deploy.properties` (and the superuser/app-user passwords) before running `deploy.sh`.
 3. Pair every schema change here with a corresponding entry in `db_upgrade_scripts/` for upgrading existing deployments.
-4. Fill in `init_values.yaml`'s `dbUserPasswords.dbuserPassword` from the cluster secret at install time — never commit a real value.
+4. Let `init_db.sh` inject the DB user password via `--set` from the `postgres` namespace's `db-common-secrets` — leave `init_values.yaml`'s `dbUserPasswords.dbuserPassword` commented out.
 
 ### Do not
 
