@@ -67,6 +67,13 @@ uncomment and fill it in). It then installs/reinstalls the `postgres-init-toolki
 the `compliance-toolkit` namespace, overwriting any existing `mosip_toolkit` DB — back it up first
 if it holds real data.
 
+**Known risk**: passing the password via `--set` can expose it in Helm release
+metadata and process arguments. The `mosip/postgres-init` chart this installs
+is external to this repo and, as far as this repo shows, does not expose a
+Kubernetes Secret/external-secret reference input as an alternative — don't
+invent a `secretKeyRef`-style field here that the chart doesn't actually
+support; that gap has to be closed in the chart itself.
+
 ---
 
 ## 4. Adding schema changes
