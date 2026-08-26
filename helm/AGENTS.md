@@ -1,20 +1,15 @@
 # AGENTS.md — `helm/`
 
-> Kubernetes Helm chart and cluster-side install scripts for the Compliance Toolkit backend service.
-> Parent guide: [repo root `AGENTS.md`](../AGENTS.md).
-> DB setup used before install: [`db_scripts/AGENTS.md`](../db_scripts/AGENTS.md). Java app: [`mosip-compliance-toolkit/CLAUDE.md`](../mosip-compliance-toolkit/CLAUDE.md).
-
----
+> K8s Helm chart + cluster-side install scripts for the Compliance Toolkit backend.
+> Parent: [`../AGENTS.md`](../AGENTS.md). DB setup before install: [`db_scripts/AGENTS.md`](../db_scripts/AGENTS.md). Java app: [`../mosip-compliance-toolkit/CLAUDE.md`](../mosip-compliance-toolkit/CLAUDE.md).
 
 ## 1. Chart
 
-| Chart | Path | Deploys | Service image |
-|-------|------|---------|----------------|
-| `compliance-toolkit` | `helm/compliance-toolkit/` | Compliance Toolkit backend Deployment + Service | `mosip-compliance-toolkit/Dockerfile` |
+| Chart | Path | Deploys | Image |
+|-------|------|---------|-------|
+| `compliance-toolkit` | `helm/compliance-toolkit/` | backend Deployment + Service | `mosip-compliance-toolkit/Dockerfile` |
 
-`Chart.yaml` (`apiVersion: v2`, `version: 0.0.1-develop`) depends on the Bitnami `common` chart for helper templates (`_helpers.tpl`). Templates: `deployment.yaml`, `service.yaml`, `serviceaccount.yaml`, `servicemonitor.yaml` (Prometheus scraping), `virtualservice.yaml` (Istio routing). `install.sh` also references a separate `compliance-toolkit-batch-job` chart published to the `mosip` Helm repo — that chart is **not** part of this repo's `helm/` folder.
-
----
+`Chart.yaml` (`apiVersion: v2`, `version: 0.0.1-develop`) depends on the Bitnami `common` chart. Templates: `deployment.yaml`, `service.yaml`, `serviceaccount.yaml`, `servicemonitor.yaml` (Prometheus), `virtualservice.yaml` (Istio). `install.sh` also installs a separate `compliance-toolkit-batch-job` chart published to the `mosip` Helm repo — **not** part of this `helm/` folder.
 
 ## 2. Layout
 
@@ -31,19 +26,10 @@ helm/
     ├── keycloak-init.sh              # creates/updates the toolkit Keycloak client
     ├── restart.sh                    # rolling restart of the compliance-toolkit namespace's deployments
     ├── delete.sh                     # uninstalls the compliance-toolkit helm release
-    └── templates/
-        ├── NOTES.txt
-        ├── _helpers.tpl
-        ├── deployment.yaml
-        ├── service.yaml
-        ├── serviceaccount.yaml
-        ├── servicemonitor.yaml
-        └── virtualservice.yaml
+    └── templates/                    # NOTES.txt, _helpers.tpl, deployment/service/serviceaccount/servicemonitor/virtualservice.yaml
 ```
 
-CI lints and publishes this chart via [`.github/workflows/chart-lint-publish.yml`](../.github/workflows/chart-lint-publish.yml) (reusable `mosip/kattu` workflow, triggered on changes under `helm/**`). The keycloak values file is separately checked by [`.github/workflows/verify-keycloak-init.yml`](../.github/workflows/verify-keycloak-init.yml), triggered on changes under `helm/compliance-toolkit/keycloak-init**`.
-
----
+CI: [`chart-lint-publish.yml`](../.github/workflows/chart-lint-publish.yml) (`mosip/kattu`) lints/publishes on `helm/**` changes; [`verify-keycloak-init.yml`](../.github/workflows/verify-keycloak-init.yml) checks the keycloak values file on `helm/compliance-toolkit/keycloak-init**` changes.
 
 ## 3. Install
 
@@ -52,33 +38,21 @@ cd helm/compliance-toolkit
 ./install.sh [kubeconfig]
 ```
 
-`install.sh` flow: create the `compliance-toolkit` namespace → disable Istio auto-injection label → prompt for the compliance toolkit host and write it into the `global` ConfigMap (`mosip-compliance-host`) → `copy_cm.sh` (copies `global`, `artifactory-share`, `config-server-share` ConfigMaps in) → apply `ctk-set-cookie-header.yaml` Istio `EnvoyFilter` → run `keycloak-init.sh` → `helm install compliance-toolkit mosip/compliance-toolkit` and `helm install compliance-toolkit-batch-job mosip/compliance-toolkit-batch-job` (both pinned to `CHART_VERSION=0.0.1-develop` in the script) → wait for rollout.
+`install.sh`: create `compliance-toolkit` namespace → disable Istio auto-injection → prompt for host, write into `global` ConfigMap (`mosip-compliance-host`) → `copy_cm.sh` (global/artifactory-share/config-server-share) → apply `ctk-set-cookie-header.yaml` EnvoyFilter → `keycloak-init.sh` → `helm install` both `compliance-toolkit` and `compliance-toolkit-batch-job` (pinned `CHART_VERSION=0.0.1-develop` in the script) → wait for rollout.
 
 ```bash
-./keycloak-init.sh   # run standalone if only the Keycloak client needs (re)creating
-./restart.sh          # rolling restart of all deployments in the compliance-toolkit namespace
-./delete.sh            # interactive teardown of the compliance-toolkit helm release
+./keycloak-init.sh   # standalone: (re)create the Keycloak client only
+./restart.sh          # rolling restart of all deployments in the namespace
+./delete.sh            # interactive teardown of the helm release
 ```
 
-`keycloak-init.sh` copies Keycloak env-var ConfigMaps/secrets into the `compliance-toolkit` namespace, prompts for reCAPTCHA site/secret keys, then runs the `mosip/keycloak-init` chart (`keycloak-init-values.yaml`) to create the `mosip_toolkit_client` and `mosip_toolkit_android_client` Keycloak clients, syncing the resulting secret into the `keycloak` and `config-server` namespaces.
-
----
+`keycloak-init.sh` copies Keycloak ConfigMaps/secrets in, prompts for reCAPTCHA keys, runs `mosip/keycloak-init` (`keycloak-init-values.yaml`) to create the `mosip_toolkit_client`/`mosip_toolkit_android_client` clients, and syncs the resulting secret into `keycloak`/`config-server` namespaces.
 
 ## 4. Agent rules
 
-### Do
+**Do**: bump `Chart.yaml`'s `version` when publishing — keep it, `install.sh`'s `CHART_VERSION` (`compliance-toolkit`), and `keycloak-init.sh`'s `CHART_VERSION` (`toolkit-keycloak-init`) aligned with the published `mosip` Helm repo; add new values to `values.yaml` with sane defaults (`install.sh` only overrides `istio.corsPolicy.allowOrigins` via `--set`); `helm lint helm/compliance-toolkit` locally before relying on CI; run the DB deploy ([`db_scripts/`](../db_scripts/AGENTS.md)) before `install.sh` — it expects `mosip_toolkit` to already exist.
 
-1. Keep `Chart.yaml`'s `version` bumped when publishing a chart change; `install.sh`'s `CHART_VERSION` (`compliance-toolkit`) and `keycloak-init.sh`'s `CHART_VERSION` (`toolkit-keycloak-init`) are pinned separately — keep both aligned with the published `mosip` Helm repo when releasing.
-2. Add new Helm values to `values.yaml` with sane defaults — `install.sh` only overrides `istio.corsPolicy.allowOrigins` via `--set`.
-3. Lint the chart locally (`helm lint helm/compliance-toolkit`) before relying on CI's `chart-lint-publish.yml` to catch issues.
-4. Coordinate the DB deploy ([`db_scripts/`](../db_scripts/AGENTS.md)) before running `install.sh` — the service expects `mosip_toolkit` to already exist.
-
-### Do not
-
-1. Hardcode environment-specific hosts into chart templates — pass non-sensitive values via `values.yaml`, `--set`, or ConfigMap, as `install.sh` does.
-2. Store reCAPTCHA keys or Keycloak client secrets in `values.yaml`, `--set`, or a ConfigMap — they must live only in Kubernetes Secrets. `keycloak-init.sh` prompts for them interactively and stores them as Kubernetes Secrets, not in this repo; never commit a real value for either.
-3. Hand-edit a `Chart.lock` file if one is generated for the `common` chart dependency — it is a generated lockfile.
-4. Assume `compliance-toolkit-batch-job` lives in this `helm/` folder — it's a separate chart published to the `mosip` Helm repo that `install.sh` also installs.
+**Do not**: hardcode environment-specific hosts into templates (use `values.yaml`/`--set`/ConfigMap, as `install.sh` does); put reCAPTCHA keys or Keycloak client secrets in `values.yaml`/`--set`/ConfigMap — Kubernetes Secrets only (`keycloak-init.sh` handles this, never commit a real value); hand-edit a generated `Chart.lock`; assume `compliance-toolkit-batch-job` lives in this folder — it's published separately.
 
 ---
 

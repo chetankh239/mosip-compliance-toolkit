@@ -1,18 +1,13 @@
 # AGENTS.md — `db_scripts/`
 
 > Greenfield PostgreSQL install for the `mosip_toolkit` database.
-> Parent guide: [repo root `AGENTS.md`](../AGENTS.md).
-> Related: [`db_upgrade_scripts/AGENTS.md`](../db_upgrade_scripts/AGENTS.md).
-
----
+> Parent: [`../AGENTS.md`](../AGENTS.md). Related: [`db_upgrade_scripts/AGENTS.md`](../db_upgrade_scripts/AGENTS.md).
 
 ## 1. Purpose
 
-Use this folder for **fresh** environments only (sandbox init, empty Postgres). `deploy.sh` **drops** the existing database and role before recreating them — do not run it against a database that must retain data. For an already-deployed environment, use [`db_upgrade_scripts/`](../db_upgrade_scripts/AGENTS.md) instead.
+**Fresh** environments only (sandbox init, empty Postgres) — `deploy.sh` **drops** the existing DB/role before recreating them. For an already-deployed environment use [`db_upgrade_scripts/`](../db_upgrade_scripts/AGENTS.md) instead.
 
-`init_db.sh` runs this deploy automatically inside an existing MOSIP Kubernetes cluster (installs the `postgres-init` Helm chart with `init_values.yaml`).
-
----
+`init_db.sh` runs this deploy inside an existing MOSIP K8s cluster (installs the `postgres-init` Helm chart with `init_values.yaml`).
 
 ## 2. Layout
 
@@ -34,13 +29,11 @@ db_scripts/
     └── drop_role.sql          # destructive reset (used by deploy.sh)
 ```
 
-There is a single schema, `mosip_toolkit`. There is no `dml.sql`/`dml/` pair in this repo — `deploy.sh` only runs `dml.sql` when `DML_FLAG=1`, but that file is not currently checked in, so leave `DML_FLAG=0` unless you add one.
-
----
+Single schema, `mosip_toolkit`. No `dml.sql`/`dml/` checked in — `deploy.sh` only runs `dml.sql` when `DML_FLAG=1`; leave `DML_FLAG=0` unless you add one.
 
 ## 3. How to run
 
-Developer / local run of the raw SQL:
+Local raw-SQL run:
 
 ```bash
 cd db_scripts/mosip_toolkit
@@ -48,9 +41,9 @@ cd db_scripts/mosip_toolkit
 ./deploy.sh deploy.properties
 ```
 
-`deploy.sh` prompts for `SU_USER_PWD` and `DBUSER_PWD` (or reads them from the environment before invoking `psql`) — it terminates active connections to `MOSIP_DB_NAME`, then drops and recreates the database and role.
+`deploy.sh` prompts for `SU_USER_PWD`/`DBUSER_PWD` (or reads them from the env), terminates active connections to `MOSIP_DB_NAME`, then drops and recreates the DB and role.
 
-Cluster install (existing MOSIP K8s cluster with Postgres already running):
+Cluster install (existing MOSIP K8s cluster with Postgres running):
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -59,45 +52,21 @@ cd db_scripts
 ./init_db.sh [kubeconfig]
 ```
 
-`init_db.sh` prompts for confirmation, then reads the app DB user's password from the `postgres`
-namespace's `db-common-secrets` cluster secret and passes it to the chart via `--set
-dbUserPasswords.dbuserPassword="$DB_USER_PASSWORD"` — it does **not** read the password from
-`init_values.yaml` (that field is commented out there and unused; leave it that way, do not
-uncomment and fill it in). It then installs/reinstalls the `postgres-init-toolkit` Helm release in
-the `compliance-toolkit` namespace, overwriting any existing `mosip_toolkit` DB — back it up first
-if it holds real data.
+`init_db.sh` reads the app DB user's password from the `postgres` namespace's `db-common-secrets` secret and passes it via `--set dbUserPasswords.dbuserPassword="$DB_USER_PASSWORD"` — **not** from `init_values.yaml` (that field stays commented out/unused). It then (re)installs `postgres-init-toolkit` in the `compliance-toolkit` namespace, overwriting any existing `mosip_toolkit` DB — back it up first if it holds real data.
 
-**Known risk**: passing the password via `--set` can expose it in Helm release
-metadata and process arguments. The `mosip/postgres-init` chart this installs
-is external to this repo and, as far as this repo shows, does not expose a
-Kubernetes Secret/external-secret reference input as an alternative — don't
-invent a `secretKeyRef`-style field here that the chart doesn't actually
-support; that gap has to be closed in the chart itself.
-
----
+**Known risk**: `--set` can leak the password into Helm release metadata/process args. `mosip/postgres-init` is external to this repo and shows no Kubernetes Secret/external-secret input as an alternative — don't invent a `secretKeyRef`-style field it doesn't support; the real fix belongs in the chart.
 
 ## 4. Adding schema changes
 
-1. Add/edit DDL under `mosip_toolkit/ddl/` (one file per table or FK set — see `ddl/fk.sql` for cross-table foreign keys).
-2. Wire the new file into `mosip_toolkit/ddl.sql` via `\ir ddl/<file>.sql`.
-3. If the change ships to an already-deployed environment, add a matching upgrade (and rollback) pair in [`db_upgrade_scripts/`](../db_upgrade_scripts/AGENTS.md) — this folder alone is not sufficient for upgrading a live deployment.
-
----
+1. Add/edit DDL under `mosip_toolkit/ddl/` (one file per table/FK set — see `ddl/fk.sql` for cross-table FKs).
+2. Wire it into `mosip_toolkit/ddl.sql` via `\ir ddl/<file>.sql`.
+3. Reaching an already-deployed environment: also add a matching upgrade/rollback pair in [`db_upgrade_scripts/`](../db_upgrade_scripts/AGENTS.md).
 
 ## 5. Agent rules
 
-### Do
+**Do**: wire every new DDL file into `ddl.sql` (unincluded files never apply); set `deploy.properties` + passwords before `deploy.sh`; pair deployed-env schema changes with `db_upgrade_scripts/`.
 
-1. Keep new tables under `mosip_toolkit/ddl/` **and** wire them into `mosip_toolkit/ddl.sql` — a file that exists but isn't `\ir`-included is never applied.
-2. Set `deploy.properties` (and the superuser/app-user passwords) before running `deploy.sh`.
-3. Pair every schema change here with a corresponding entry in `db_upgrade_scripts/` for upgrading existing deployments.
-4. Let `init_db.sh` inject the DB user password via `--set` from the `postgres` namespace's `db-common-secrets` — leave `init_values.yaml`'s `dbUserPasswords.dbuserPassword` commented out.
-
-### Do not
-
-1. Run `deploy.sh` or `init_db.sh` against a database that must retain data — both drop the existing DB/role unconditionally.
-2. Commit real credentials into `deploy.properties` or `init_values.yaml`.
-3. Skip the `db_upgrade_scripts/` companion when a DDL change needs to reach an already-running environment.
+**Do not**: run `deploy.sh`/`init_db.sh` against data that must survive (unconditional drop); commit real credentials into `deploy.properties`/`init_values.yaml`; skip the `db_upgrade_scripts/` companion for a live-environment DDL change.
 
 ---
 
